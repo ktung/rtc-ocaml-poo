@@ -366,6 +366,11 @@ class gestionnaireReseau
     method nb_aretes = G.nb_edges graphe_stations
     method get_graphe = graphe_stations
     method get_noeuds = noeuds_stations
+    (* Getter pour travailler via interpreteur A SUPPRIMER *)
+    method get_voyages = voyages
+    method get_stations = stations
+    method get_lignes = ligne
+    (* Getter pour travailler via interpreteur A SUPPRIMER *)
     method print_stats =
       let open Printf in 
       begin
