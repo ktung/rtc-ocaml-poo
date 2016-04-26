@@ -501,8 +501,11 @@ class gestionnaireReseau
   ?(date = Some(date_actuelle ())) 
         (l_num : string) : (string * int list) list =
       (* Traitement correspondant aux  préconditions  *)
+      if not (H.mem lignes l_num) then raise (Erreur "Ligne invalide");
       (* Traitement correspondant à la fonction *)
-      raise (Non_Implante "lister_stations_sur_itineraire")
+      let voyages = L.fold_left (fun acc vid -> (H.find voyages vid)::acc) [] (self#trouver_voyages_sur_la_ligne ~date:date l_num) in
+        let l = H.find lignes l_num in
+          l#stations_sur_itineraire_des_voyages voyages
 
         
     (* ----------------------------------------------------------------------- *)
