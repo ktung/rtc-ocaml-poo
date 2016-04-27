@@ -555,8 +555,29 @@ class gestionnaireReseau
         (l_num : string) 
         (sid : G.V.label) : arret  =
       (* Traitement correspondant aux préconditions *)
+      if not (H.mem lignes l_num) then raise (Erreur "Ligne inexistante");
+      if not (H.mem stations sid) then raise (Erreur "Station inexistante");
+      if heure < 0 then raise (Erreur "Heure négative");
       (* Traitement correspondant à la fonction *)
-      raise (Non_Implante "prochain_arret")
+      let vids_ligne = self#trouver_voyages_sur_la_ligne l_num ~date:(Some date) in
+      let vids_station = let s = H.find stations sid in s#get_voyages_passants in
+      let vids = vids_ligne ++ vids_station in
+      let arrets = L.concat
+        (L.map
+           (fun vid ->
+              let v = H.find voyages vid in
+                if v#get_direction = direction then v#get_arrets else []
+           )
+           vids
+        ) in (
+        if ((L.length arrets) = 0) then raise (Erreur "Direction invalide");
+        let arrets_station = L.filter (fun a -> a#get_station_id = sid && a#get_arrivee >= heure) arrets in
+          if ((L.length arrets_station) = 0) then raise (Erreur "Plus d'arrets");
+          L.hd
+            (L.sort
+            (fun a1 a2 -> if a1#get_arrivee < a2#get_arrivee then -1 else if a1#get_arrivee > a2#get_arrivee then 1 else 0)
+            arrets_station)
+      )
     
     (* -- À IMPLANTER/COMPLÉTER (15 PTS) ------------------------------------- *)
     (* ----------------------------------------------------------------------- *)
