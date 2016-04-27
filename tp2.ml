@@ -603,9 +603,26 @@ class gestionnaireReseau
         (sid_dep : G.V.label) 
         (sid_dest : G.V.label) : (string * int * int) list =
       (* Traitement correspondant aux préconditions *)
+      if not (H.mem voyages_par_date date) then
+        raise (Erreur "Date invalide ou pas prise en charge");
+      if not (H.mem stations sid_dep) then raise (Erreur "Station dep inexistante");
+      if not (H.mem stations sid_dest) then raise (Erreur "Station dest inexistante");
+      if heure < 0 then raise (Erreur "Heure négative");
       (* Traitement correspondant à la fonction *)
-      raise (Non_Implante "prochaines_lignes_entre")
-  
+
+      let l_num = ((self#lister_lignes_passantes sid_dep) ++ (self#lister_lignes_passantes sid_dest)) in
+        L.fold_left (fun acc lnum -> let entry = (
+          let vids_ligne = self#trouver_voyages_sur_la_ligne lnum ~date:(Some date) in
+          let vids_station_dep = let sdep = H.find stations sid_dep in sdep#get_voyages_passants in
+          let vids_station_dest = let sdest = H.find stations sid_dest in sdest#get_voyages_passants in
+          let vids = vids_ligne ++ vids_station_dep ++ vids_station_dest in
+            let arrets = L.concat (L.map (fun vid -> let v = H.find voyages vid in v#get_arrets) vids) in
+            let arrets_station_dep = L.sort (fun a1 a2 -> if a1#get_arrivee < a2#get_arrivee then -1 else if a1#get_arrivee > a2#get_arrivee then 1 else 0) (L.filter (fun a -> a#get_station_id = sid_dep && a#get_arrivee >= heure) arrets) in
+            let arrets_station_dest = L.sort (fun a1 a2 -> if a1#get_arrivee < a2#get_arrivee then -1 else if a1#get_arrivee > a2#get_arrivee then 1 else 0) (L.filter (fun a -> a#get_station_id = sid_dest && a#get_arrivee >= heure) arrets) in
+              if L.length arrets_station_dep > 0 && L.length arrets_station_dest > 0 then
+                (lnum, (L.hd arrets_station_dep)#get_arrivee, (L.hd arrets_station_dest)#get_arrivee)
+              else ("0",0,0)
+        ) in if entry = ("0",0,0) then acc else entry::acc) [] l_num
 
     (* ----------------------------------------------------------------------- *)
     (* @Fonction      : trouver_horaire : ?date:int -> ?heure:int -> direction *)
