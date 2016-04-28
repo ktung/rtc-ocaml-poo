@@ -695,9 +695,36 @@ class gestionnaireReseau
       ?(heure = heure_actuelle ())
       (sid1 : G.V.label) (sid2 : G.V.label) : unit =
     (* Traitement correspondant aux préconditions *)
+    if not (H.mem voyages_par_date date) then
+      raise (Erreur "Date invalide ou pas prise en charge");
+    if not (H.mem stations sid1) then raise (Erreur "Station dep inexistante");
+    if not (H.mem stations sid2) then raise (Erreur "Station dest inexistante");
+    if heure < 0 then raise (Erreur "Heure négative");
     (* Traitement correspondant à la fonction *)
-    raise (Non_Implante "maj_etiquette_arete")
-     
+    if (G.mem_edge self#get_graphe (H.find self#get_noeuds sid1) (H.find self#get_noeuds sid2)) then
+      G.remove_edge self#get_graphe (H.find self#get_noeuds sid1) (H.find self#get_noeuds sid2)
+    else raise (Erreur "Aucune arete entre s1 et s2");
+
+    let l_num = ((self#lister_lignes_passantes sid1) ++ (self#lister_lignes_passantes sid2)) in
+      let poids_list = (L.fold_left (fun acc lnum -> let entry = (
+        let vids_ligne = self#trouver_voyages_sur_la_ligne lnum ~date:(Some date) in
+        let vids_station_dep = let sdep = H.find stations sid1 in sdep#get_voyages_passants in
+        let vids_station_dest = let sdest = H.find stations sid2 in sdest#get_voyages_passants in
+        let vids = vids_ligne ++ vids_station_dep ++ vids_station_dest in
+          let arrets = L.concat (L.map (fun vid -> let v = H.find voyages vid in v#get_arrets) vids) in
+          let arrets_station_dep = L.sort (fun a1 a2 -> if a1#get_arrivee < a2#get_arrivee then -1 else if a1#get_arrivee > a2#get_arrivee then 1 else 0) (L.filter (fun a -> a#get_station_id = sid1 && a#get_arrivee >= heure) arrets) in
+          let arrets_station_dest = L.sort (fun a1 a2 -> if a1#get_arrivee < a2#get_arrivee then -1 else if a1#get_arrivee > a2#get_arrivee then 1 else 0) (L.filter (fun a -> a#get_station_id = sid2 && a#get_arrivee >= heure) arrets) in
+            if L.length arrets_station_dep > 0 && L.length arrets_station_dest > 0 then
+              (L.hd arrets_station_dest)#get_arrivee - (L.hd arrets_station_dep)#get_arrivee
+            else 0
+      ) in if entry = 0 then acc else entry::acc) [] l_num) in
+      let poids_tries = L.sort (fun p1 p2 -> if p1 < p2 then 1 else if p1 > p2 then -1 else 0) poids_list in
+        if L.length poids_tries > 0 then
+          let edge = G.E.create (H.find self#get_noeuds sid1) (L.hd poids_tries) (H.find self#get_noeuds sid2) in
+            G.add_edge_e self#get_graphe edge
+        else
+          let edge = G.E.create (H.find self#get_noeuds sid1) poids_max_arete (H.find self#get_noeuds sid2) in
+            G.add_edge_e self#get_graphe edge
 
     (* ----------------------------------------------------------------------- *)
     (* @Fonction      : maj_toutes_aretes_reseau : ?date:int -> ?heure:int ->  *)
