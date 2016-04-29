@@ -369,7 +369,7 @@ class gestionnaireReseau
     (* Getter pour travailler via interpreteur A SUPPRIMER *)
     method get_voyages = voyages
     method get_stations = stations
-    method get_lignes = ligne
+    method get_lignes = lignes
     (* Getter pour travailler via interpreteur A SUPPRIMER *)
     method print_stats =
       let open Printf in 
@@ -787,8 +787,21 @@ class gestionnaireReseau
       (coord1 : coordonnees) 
       (coord2 : coordonnees) : (G.V.label * G.V.label * float * float) list =
     (* Traitement correspondant aux préconditions *)
+    if not(coord1#is_valid_gps) then raise (Erreur "Coord1 invalide");
+    if not(coord2#is_valid_gps) then raise (Erreur "Coord2 invalide");
+    if rmax < 0. then raise (Erreur "Rayon négatif");
     (* Traitement correspondant à la fonction *)
     raise (Non_Implante "paires_stations_possible")
+
+(* let chez_nous = new coordonnees 46.760074  (-71.319867)
+and desjardins = new coordonnees 46.778808 (-71.270014) in
+  let coord1 = desjardins and coord2 = chez_nous and rmax = 0.25 in
+    let st_dep = app#trouver_stations_environnantes coord1 rmax in
+      L.fold_left (fun acc station -> let (st, d) = station in
+        let st_env = BF.all_shortest_paths app#get_graphe (H.find app#get_noeuds st) in
+          st_env::acc
+      ) [] st_dep
+  ;; *)
       
        
     (* -- À IMPLANTER/COMPLÉTER (10 PTS) ------------------------------------- *)
@@ -809,9 +822,19 @@ class gestionnaireReseau
       (sid_dep : G.V.label) 
       (sid_dest : G.V.label) : G.V.label list = 
     (* Traitement correspondant aux préconditions *)
+    if not (H.mem stations sid_dep) then raise (Erreur "Station dep inexistante");
+    if not (H.mem stations sid_dest) then raise (Erreur "Station dest inexistante");
     (* Traitement correspondant à la fonction *)
     raise (Non_Implante "plus_court_chemin")
-          
+
+  (* let sid_dep = 1515 and sid_dest = 3099 in
+    let (chemin_list,d) = (G.shortest_path app#get_graphe (H.find app#get_noeuds sid_dep) (H.find app#get_noeuds sid_dest)) in
+      let stats = [sid_dep] in
+        L.fold_left
+          (fun acc st -> let src = G.V.label (G.E.src st) and dst = G.V.label (G.E.dst st) and poids = G.E.label st in
+            if src = (L.hd (L.rev acc)) then acc@[dst] else acc)
+          stats chemin_list
+  ;; *)
 
     (* ----------------------------------------------------------------------- *)
     (* @Fonction      : plans_possibles_pour_chemin : ?date:int ->             *)
@@ -895,6 +918,12 @@ class gestionnaireReseau
       (coord1 : coordonnees) (coord2 : coordonnees) : 
       (float * float * (string * int * int * G.V.label list) list) list =
     (* Traitement correspondant aux préconditions *)
+    if not (H.mem voyages_par_date date) then
+        raise (Erreur "Date invalide ou pas prise en charge");
+    if heure < 0 then raise (Erreur "Heure négative");
+    if not(coord1#is_valid_gps) then raise (Erreur "Coord1 invalide");
+    if not(coord2#is_valid_gps) then raise (Erreur "Coord2 invalide");
+    if rmax < 0. then raise (Erreur "Rayon négatif");
     (* Traitement correspondant à la fonction *)
     raise (Non_Implante "trouver_trajet_optimal")
                   
